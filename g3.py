@@ -2,6 +2,7 @@
 import serial
 import time
 import sys
+import datetime
 from struct import *
 debug=0
 # work for pms3003
@@ -83,8 +84,13 @@ class g3sensor():
             if debug: print self.data
             return self.data
 
+
 if __name__ == '__main__': 
     air=g3sensor()
+    logFile = 'home/pi/Desktop/pms3003-g3/logs/' + str(datetime.datetime.now()) + '.txt'
+    with open('home/pi/Desktop/pms3003-g3/log.txt', 'a') as outfile:
+	outfile.write(logFile)
+	outfile.write("\n")
     while True:
         pmdata=0
         try:
@@ -93,5 +99,9 @@ if __name__ == '__main__':
             next
         if pmdata != 0:
             print pmdata
-            break
-
+	    now = datetime.datetime.now()
+	    with open(logFile, 'a') as outfile:
+		outfile.write(str(now) + ', ')
+	        outfile.write(', '.join(str(e) for e in pmdata))
+		outfile.write("\n")
+            time.sleep(10)
