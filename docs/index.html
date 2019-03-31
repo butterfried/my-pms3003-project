@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        .container-fluid {
+            height: 100%;
+        }
+    </style>
+
+    <title>AQI@home</title>
+</head>
+<body class="bg-dark">
+
+    <div class="container-fluid">
+        <div class="row">
+
+            <div class="col-sm-12 py-2 px-1">
+                <p class="text-light text-center">updated at: <span id="last-updated"></span></p>
+            </div>
+
+            <div class="col-md-4 py-2 px-1">
+                <div class="card bg-danger text-light">
+                    <h5 class="card-header">PM2.5</h5>
+                    <div class="card-body">
+                        <h1 class="text-center"><span id="pm2_5"></span></h1>
+                    </div>
+                </div>      
+            </div>    
+
+            <div class="col-md-4 py-2 px-1">
+                <div class="card bg-danger text-light">
+                    <h5 class="card-header">PM1.0</h5>
+                    <div class="card-body">
+                        <h1 class="text-center"><span id="pm1_0"></span></h1>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 py-2 px-1">
+                <div class="card bg-danger text-light">
+                    <h5 class="card-header">PM10</h5>
+                    <div class="card-body">
+                        <h1 class="text-center"><span id="pm10"></span></h1>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 py-2 px-1">
+                <div class="card bg-info text-light">
+                    <h5 class="card-header">History</h5>
+                    <div class="card-body bg-white">
+                        <canvas id="myChart" width="3" height="2"></canvas>
+                    </div>
+                </div>      
+            </div>
+
+        </div>
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    <!-- Firebase App is always required and must be first -->
+    <script src="https://www.gstatic.com/firebasejs/5.9.2/firebase-app.js"></script>
+
+    <!-- Add additional services that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/5.9.2/firebase-database.js"></script>
+
+    <!-- chartJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js"></script>
+
+    <script>
+        var config = {
+            databaseURL: "https://my-iot-17923.firebaseio.com",
+        };
+        firebase.initializeApp(config);
+
+        var aqiRef = firebase.database().ref('aqi-data');
+
+        aqiRef.limitToLast(1).on('child_added', function(snapshot) {
+            console.log(snapshot.val());
+            document.querySelector("#pm2_5").innerHTML = snapshot.val()["pm2_5"];
+            document.querySelector("#pm1_0").innerHTML = snapshot.val()["pm1_0"];
+            document.querySelector("#pm10").innerHTML = snapshot.val()["pm10"];
+            document.querySelector("#last-updated").innerHTML = snapshot.val()["datetime"];
+        });
+
+        aqiRef.on('value', function(snapshot) {
+            // console.log(snapshot.val());
+        });
+
+        var pm25_dataset = [];
+        var pm1_dataset = [];
+        var pm10_dataset = [];
+        var time_dataset = [];
+
+        query = aqiRef.orderByKey().limitToLast(5760);
+        query.once("value", function(snapshot) {
+            snapshot.forEach(function(dataSnapshot) {
+                pm25_dataset.push(dataSnapshot.val()["pm2_5"]);
+                pm1_dataset.push(dataSnapshot.val()["pm1_0"]);
+                pm10_dataset.push(dataSnapshot.val()["pm10"]);
+                time_dataset.push(dataSnapshot.val()["datetime"]);
+            });
+            console.log(pm25_dataset);
+            initChart()
+        });
+
+
+        var ctx = document.getElementById('myChart').getContext('2d');
+
+        var myLineChart;
+        function initChart() {
+            myLineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: time_dataset,
+                    datasets: [{ 
+                        data: pm25_dataset,
+                        label: "PM2.5",
+                        borderColor: "#3e95cd",
+                        fill: false
+                    }, { 
+                        data: pm1_dataset,
+                        label: "PM1",
+                        borderColor: "#8e5ea2",
+                        fill: false
+                    }, { 
+                        data: pm10_dataset,
+                        label: "PM10",
+                        borderColor: "#3cba9f",
+                        fill: false
+                    }]
+                },
+                options: {
+                    title: {
+                        display: false,
+                        text: 'last 24 hours AQI data'
+                    },
+                    scales: { yAxes: [{ display: false }] }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
