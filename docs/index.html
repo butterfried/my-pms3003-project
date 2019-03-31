@@ -123,7 +123,7 @@
                 if ( max_pm10 < dataSnapshot.val()["pm10"] ) {
                     max_pm10 = dataSnapshot.val()["pm10"]
                 }
-                if ( counter == 6 ) {
+                if ( counter == 12 ) {
                     pm25_dataset.push(dataSnapshot.val()["pm2_5"]);
                     pm1_dataset.push(dataSnapshot.val()["pm1_0"]);
                     pm10_dataset.push(dataSnapshot.val()["pm10"]);
