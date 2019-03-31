@@ -109,13 +109,20 @@
 
         query = aqiRef.orderByKey().limitToLast(5760);
         query.once("value", function(snapshot) {
+            var counter = 0;
             snapshot.forEach(function(dataSnapshot) {
-                pm25_dataset.push(dataSnapshot.val()["pm2_5"]);
-                pm1_dataset.push(dataSnapshot.val()["pm1_0"]);
-                pm10_dataset.push(dataSnapshot.val()["pm10"]);
-                time_dataset.push(dataSnapshot.val()["datetime"]);
+                if ( counter == 0 ) {
+                    pm25_dataset.push(dataSnapshot.val()["pm2_5"]);
+                    pm1_dataset.push(dataSnapshot.val()["pm1_0"]);
+                    pm10_dataset.push(dataSnapshot.val()["pm10"]);
+                    time_dataset.push(dataSnapshot.val()["datetime"]);
+                    counter++;
+                } else if ( counter == 6 ) {
+                    counter = 0;
+                } else {
+                    counter++;
+                }
             });
-            console.log(pm25_dataset);
             initChart()
         });
 
